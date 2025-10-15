@@ -10,6 +10,9 @@ const API_ENDPOINTS = {
 // Utility Functions
 function showMessage(elementId, message, isError = false) {
     const messageElement = document.getElementById(elementId);
+    if (!messageElement) return;
+
+    // Prevent XSS by using textContent
     messageElement.textContent = message;
     messageElement.className = `message ${isError ? 'error' : 'success'}`;
     messageElement.style.display = 'block';
@@ -18,6 +21,12 @@ function showMessage(elementId, message, isError = false) {
     setTimeout(() => {
         messageElement.style.display = 'none';
     }, 5000);
+}
+
+// Validate email format
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
 }
 
 function clearForm(formId) {
@@ -97,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         signInForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const email = document.getElementById('signInEmail').value;
+            const email = document.getElementById('signInEmail').value.trim();
             const password = document.getElementById('signInPassword').value;
 
             // Validation
@@ -106,30 +115,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            if (!isValidEmail(email)) {
+                showMessage('signInMessage', 'Please enter a valid email address', true);
+                return;
+            }
+
             // Show loading
             const submitButton = signInForm.querySelector('button[type="submit"]');
-            const originalButtonText = submitButton.textContent;
-            submitButton.textContent = 'Loading...';
+            const originalButtonHTML = submitButton.innerHTML;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Signing in...</span>';
             submitButton.disabled = true;
 
             // Make API call
             const result = await loginUser(email, password);
 
             // Reset button
-            submitButton.textContent = originalButtonText;
+            submitButton.innerHTML = originalButtonHTML;
             submitButton.disabled = false;
 
             if (result.success) {
                 showMessage('signInMessage', 'Login successful! Redirecting...', false);
 
-                // שמור את ה-token אם יש
-                if (result.data.token) {
-                    localStorage.setItem('authToken', result.data.token);
-                }
+                try {
+                    // שמור את ה-token אם יש
+                    if (result.data.token) {
+                        localStorage.setItem('authToken', result.data.token);
+                    }
 
-                // שמור מידע על המשתמש
-                if (result.data.user) {
-                    localStorage.setItem('user', JSON.stringify(result.data.user));
+                    // שמור מידע על המשתמש
+                    if (result.data.user) {
+                        localStorage.setItem('user', JSON.stringify(result.data.user));
+                    }
+                } catch (error) {
+                    console.error('Error saving to localStorage:', error);
+                    showMessage('signInMessage', 'Login successful but could not save session', true);
                 }
 
                 // נקה את הטופס
@@ -137,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // הפנה לדף הבא (שנה לפי הצורך)
                 setTimeout(() => {
-                    window.location.href = '/dashboard.html';
+                    window.location.href = '/menuPage/index.html';
                 }, 1500);
             } else {
                 showMessage('signInMessage', result.error, true);
@@ -151,13 +170,18 @@ document.addEventListener('DOMContentLoaded', function() {
         signUpForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const name = document.getElementById('signUpName').value;
-            const email = document.getElementById('signUpEmail').value;
+            const name = document.getElementById('signUpName').value.trim();
+            const email = document.getElementById('signUpEmail').value.trim();
             const password = document.getElementById('signUpPassword').value;
 
             // Validation
             if (!name || !email || !password) {
                 showMessage('signUpMessage', 'Please fill in all fields', true);
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                showMessage('signUpMessage', 'Please enter a valid email address', true);
                 return;
             }
 
@@ -168,15 +192,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Show loading
             const submitButton = signUpForm.querySelector('button[type="submit"]');
-            const originalButtonText = submitButton.textContent;
-            submitButton.textContent = 'Loading...';
+            const originalButtonHTML = submitButton.innerHTML;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Creating account...</span>';
             submitButton.disabled = true;
 
             // Make API call
             const result = await registerUser(name, email, password);
 
             // Reset button
-            submitButton.textContent = originalButtonText;
+            submitButton.innerHTML = originalButtonHTML;
             submitButton.disabled = false;
 
             if (result.success) {
@@ -190,7 +214,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('signIn').click();
                 }, 2000);
             } else {
-                showMessage('signUpMessage', result.error, true);
+                // בדוק אם האימייל כבר קיים
+                if (result.error.toLowerCase().includes('already') ||
+                    result.error.toLowerCase().includes('exist') ||
+                    result.error.toLowerCase().includes('registered')) {
+
+                    // הצג הודעה יפה
+                    showMessage('signUpMessage', '✓ This email is already registered. Redirecting to login...', false);
+
+                    // עבור לטופס התחברות ומלא את האימייל
+                    setTimeout(() => {
+                        document.getElementById('signIn').click();
+
+                        // מלא את האימייל בטופס התחברות
+                        setTimeout(() => {
+                            document.getElementById('signInEmail').value = email;
+                            document.getElementById('signInEmail').focus();
+
+                            // הצג הודעה בטופס התחברות
+                            showMessage('signInMessage', 'Welcome back! Please enter your password.', false);
+                        }, 700);
+                    }, 1500);
+                } else {
+                    showMessage('signUpMessage', result.error, true);
+                }
             }
         });
     }

@@ -4,7 +4,11 @@
       "Bash(dir)",
       "Bash(dir:*)",
       "Bash(del README.md INSTRUCTIONS.md)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(curl:*)",
+      "Bash(docker-compose:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,10 +1,13 @@
 FROM nginx:alpine
 
+# Copy custom nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Copy loginPage files to nginx html directory
-COPY loginPage/index.html /usr/share/nginx/html/
-COPY loginPage/style.css /usr/share/nginx/html/
-COPY loginPage/script.js /usr/share/nginx/html/
-COPY loginPage/app.js /usr/share/nginx/html/
+COPY loginPage/ /usr/share/nginx/html/loginPage/
+
+# Copy menuPage files to nginx html directory
+COPY menuPage/ /usr/share/nginx/html/menuPage/
 
 # Expose port 80
 EXPOSE 80

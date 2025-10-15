@@ -14,13 +14,26 @@ function generateToken(user) {
 // Register new user
 async function register(req, res) {
     try {
-        const { name, email, password } = req.body;
+        let { name, email, password } = req.body;
+
+        // Trim input values
+        name = name ? name.trim() : '';
+        email = email ? email.trim().toLowerCase() : '';
 
         // Validation
         if (!name || !email || !password) {
             return res.status(400).json({
                 success: false,
                 message: 'Name, email and password are required'
+            });
+        }
+
+        // Email format validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid email format'
             });
         }
 
@@ -79,13 +92,25 @@ async function register(req, res) {
 // Login user
 async function login(req, res) {
     try {
-        const { email, password } = req.body;
+        let { email, password } = req.body;
+
+        // Trim and normalize email
+        email = email ? email.trim().toLowerCase() : '';
 
         // Validation
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
                 message: 'Email and password are required'
+            });
+        }
+
+        // Email format validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid email format'
             });
         }
 
