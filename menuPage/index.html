@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu - Dashboard</title>
+    <title>לוח מודעות - מרקטפלייס</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,45 +11,314 @@
     <header class="top-header">
         <div class="header-container">
             <div class="logo">
-                <i class="fas fa-utensils"></i>
-                <span>Menu Dashboard</span>
+                <img src="logo.svg" alt="T&G Logo" class="logo-image">
+                <span>Trade & Give</span>
             </div>
             <nav class="header-nav">
-                <a href="#" class="nav-link">
+                <a href="#" class="nav-link active" onclick="showView('home'); return false;">
                     <i class="fas fa-home"></i>
-                    <span>Home</span>
+                    <span>דף הבית</span>
                 </a>
-                <a href="#" class="nav-link">
-                    <i class="fas fa-list"></i>
-                    <span>Menu</span>
+                <a href="#" class="nav-link" onclick="showView('my-products'); return false;">
+                    <i class="fas fa-box"></i>
+                    <span>המודעות שלי</span>
                 </a>
-                <a href="#" class="nav-link">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Analytics</span>
-                </a>
-                <a href="#" class="nav-link">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
+                <a href="#" class="nav-link" onclick="showView('post-product'); return false;">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>פרסום מודעה</span>
                 </a>
             </nav>
             <div class="header-user">
                 <div class="user-info" id="userInfo">
                     <i class="fas fa-user-circle"></i>
-                    <span id="userName">User</span>
+                    <span id="userName">משתמש</span>
                 </div>
                 <button class="logout-btn" onclick="logout()">
                     <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
+                    <span>יציאה</span>
                 </button>
             </div>
         </div>
     </header>
 
     <main class="main-content">
-        <div class="content-container">
-            <h1 class="welcome-title">Welcome to Menu Dashboard</h1>
-            <p class="welcome-text">You have successfully logged in!</p>
-        </div>
+        <!-- Hero Section with Search -->
+        <section id="heroSection" class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">מצא את המוצר הבא שלך</h1>
+                <p class="hero-subtitle">אלפי מודעות חדשות כל יום - קנה, מכור והחלף</p>
+
+                <div class="hero-search">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="heroSearchInput" placeholder='חפש מכונית, דירה, מוצרי חשמל ועוד...' onkeyup="handleHeroSearch(event)">
+                        <button class="search-btn" onclick="performSearch()">
+                            <i class="fas fa-search"></i>
+                            <span>חיפוש</span>
+                        </button>
+                    </div>
+
+                    <div class="quick-filters">
+                        <button class="quick-filter" onclick="quickFilter('vehicles')">
+                            <i class="fas fa-car"></i>
+                            רכב
+                        </button>
+                        <button class="quick-filter" onclick="quickFilter('real-estate')">
+                            <i class="fas fa-building"></i>
+                            נדל"ן
+                        </button>
+                        <button class="quick-filter" onclick="quickFilter('yad2')">
+                            <i class="fas fa-sync"></i>
+                            יד שניה
+                        </button>
+                        <button class="quick-filter" onclick="quickFilter('jobs')">
+                            <i class="fas fa-briefcase"></i>
+                            דרושים
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories Section -->
+        <section id="categoriesSection" class="categories-section">
+            <div class="content-container">
+                <h2 class="section-title">
+                    <i class="fas fa-th-large"></i>
+                    כל הקטגוריות
+                </h2>
+                <div id="categoriesGrid" class="categories-grid-modern">
+                    <!-- Categories will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Products Timeline Section -->
+        <section id="productsSection" class="products-section">
+            <div class="content-container">
+                <div class="section-header-modern">
+                    <div class="header-title">
+                        <h2 class="section-title">
+                            <i class="fas fa-bolt"></i>
+                            מודעות אחרונות
+                        </h2>
+                        <p class="section-subtitle">מוצרים חמים שהתווספו לאחרונה</p>
+                    </div>
+
+                    <div class="filters-modern">
+                        <div class="filter-group">
+                            <select id="categoryFilter" onchange="filterProducts()">
+                                <option value="">כל הקטגוריות</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <select id="sortFilter" onchange="sortProducts()">
+                                <option value="newest">הכי חדש</option>
+                                <option value="price-low">מחיר נמוך-גבוה</option>
+                                <option value="price-high">מחיר גבוה-נמוך</option>
+                                <option value="popular">הכי פופולרי</option>
+                            </select>
+                        </div>
+
+                        <button class="toggle-filters-btn" onclick="toggleSidebar()">
+                            <i class="fas fa-sliders-h"></i>
+                            פילטרים מתקדמים
+                        </button>
+                    </div>
+                </div>
+
+                <div class="products-layout">
+                    <!-- Sidebar with filters -->
+                    <aside id="filtersSidebar" class="filters-sidebar">
+                        <div class="sidebar-header">
+                            <h3>סינון מתקדם</h3>
+                            <button class="close-sidebar" onclick="toggleSidebar()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="filter-section">
+                            <h4>טווח מחירים</h4>
+                            <div class="price-inputs">
+                                <input type="number" id="minPrice" placeholder="מינימום" onchange="applyFilters()">
+                                <span>-</span>
+                                <input type="number" id="maxPrice" placeholder="מקסימום" onchange="applyFilters()">
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <h4>מיקום</h4>
+                            <input type="text" id="locationFilter" placeholder="עיר או אזור" onkeyup="applyFilters()">
+                        </div>
+
+                        <div class="filter-section">
+                            <h4>מצב המוצר</h4>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="new" onchange="applyFilters()"> חדש
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="like_new" onchange="applyFilters()"> כמו חדש
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="good" onchange="applyFilters()"> טוב
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="fair" onchange="applyFilters()"> סביר
+                            </label>
+                        </div>
+
+                        <div class="filter-section">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="tradeOnly" onchange="applyFilters()">
+                                <i class="fas fa-exchange-alt"></i>
+                                רק מוצרים להחלפה
+                            </label>
+                        </div>
+
+                        <button class="clear-filters-btn" onclick="clearFilters()">
+                            <i class="fas fa-redo"></i>
+                            נקה פילטרים
+                        </button>
+                    </aside>
+
+                    <!-- Products Grid -->
+                    <div class="products-main">
+                        <div id="productsGrid" class="products-grid-modern">
+                            <!-- Products will be loaded here -->
+                        </div>
+
+                        <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>טוען מודעות...</p>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div id="pagination" class="pagination">
+                            <!-- Pagination will be generated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Post Product Form Section -->
+        <section id="postProductSection" class="post-product-section" style="display: none;">
+            <div class="content-container">
+                <h2 class="section-title">פרסום מודעה חדשה</h2>
+                <form id="postProductForm" class="product-form">
+                    <div class="form-group">
+                        <label>קטגוריה ראשית *</label>
+                        <select id="categorySelect" required onchange="loadSubcategories()">
+                            <option value="">בחר קטגוריה</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="subcategoryGroup" style="display: none;">
+                        <label>תת קטגוריה *</label>
+                        <select id="subcategorySelect" required>
+                            <option value="">בחר תת קטגוריה</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>כותרת המודעה *</label>
+                        <input type="text" id="productTitle" required placeholder="לדוגמה: iPhone 14 Pro במצב מעולה">
+                    </div>
+
+                    <div class="form-group">
+                        <label>תיאור *</label>
+                        <textarea id="productDescription" required rows="6" placeholder="תאר את המוצר/שירות בפירוט..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>מחיר (₪)</label>
+                            <input type="number" id="productPrice" placeholder="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label>מצב *</label>
+                            <select id="productCondition" required>
+                                <option value="new">חדש</option>
+                                <option value="like_new">כמו חדש</option>
+                                <option value="good">טוב</option>
+                                <option value="fair">סביר</option>
+                                <option value="for_parts">לחלקים</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>עיר *</label>
+                            <input type="text" id="productCity" required placeholder="תל אביב">
+                        </div>
+
+                        <div class="form-group">
+                            <label>אזור</label>
+                            <input type="text" id="productArea" placeholder="מרכז">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>שם ליצירת קשר *</label>
+                            <input type="text" id="contactName" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>טלפון *</label>
+                            <input type="tel" id="contactPhone" required placeholder="05X-XXXXXXX">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>אימייל</label>
+                        <input type="email" id="contactEmail" placeholder="email@example.com">
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="isNegotiable" checked>
+                            המחיר ניתן למיקוח
+                        </label>
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="isTradeAllowed" onchange="toggleTradeDesc()">
+                            מעוניין בהחלפה/טרייד
+                        </label>
+                    </div>
+
+                    <div class="form-group" id="tradeDescGroup" style="display: none;">
+                        <label>תיאור ההחלפה המבוקשת</label>
+                        <textarea id="tradeDescription" rows="3" placeholder="במה אתה מעוניין להחליף?"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                            פרסם מודעה
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="showView('home')">
+                            ביטול
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- My Products Section -->
+        <section id="myProductsSection" class="my-products-section" style="display: none;">
+            <div class="content-container">
+                <h2 class="section-title">המודעות שלי</h2>
+                <div id="myProductsGrid" class="products-grid">
+                    <!-- User products will be loaded here -->
+                </div>
+            </div>
+        </section>
     </main>
 
     <script src="app.js"></script>

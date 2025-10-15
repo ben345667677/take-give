@@ -4,6 +4,8 @@ require('dotenv').config();
 
 const { testConnection } = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
+const productRoutes = require('./routes/productRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +32,12 @@ app.get('/api/health', (req, res) => {
 
 // Auth routes
 app.use('/api/auth', authRoutes);
+
+// Category routes
+app.use('/api/categories', categoryRoutes);
+
+// Product routes
+app.use('/api/products', productRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -69,6 +77,9 @@ async function startServer() {
             console.log(`  GET  /api/health`);
             console.log(`  POST /api/auth/register`);
             console.log(`  POST /api/auth/login`);
+            console.log(`  GET  /api/categories`);
+            console.log(`  GET  /api/products`);
+            console.log(`  POST /api/products (auth required)`);
             console.log('=================================');
         });
     } catch (error) {

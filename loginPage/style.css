@@ -25,10 +25,12 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-direction: column;
     font-family: 'Poppins', sans-serif;
     min-height: 100vh;
     overflow: hidden;
     position: relative;
+    padding-top: 80px;
 }
 
 /* Animated Background */
@@ -550,4 +552,73 @@ button:focus-visible,
 input:focus-visible {
     outline: 3px solid var(--primary-color);
     outline-offset: 2px;
+}
+
+/* Login Header Logo */
+.login-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 40px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.login-logo img {
+    width: 55px;
+    height: 55px;
+    filter: drop-shadow(0 3px 6px rgba(255, 75, 43, 0.3));
+    transition: all 0.3s ease;
+}
+
+.login-logo span {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #FF4B2B 0%, #FF416C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+}
+
+.login-logo:hover {
+    transform: scale(1.05);
+}
+
+.login-logo:hover img {
+    filter: drop-shadow(0 5px 10px rgba(255, 75, 43, 0.4));
+    transform: rotate(5deg);
+}
+
+@media screen and (max-width: 768px) {
+    body {
+        padding-top: 70px;
+    }
+
+    .login-header {
+        padding: 15px 20px;
+    }
+
+    .login-logo img {
+        width: 45px;
+        height: 45px;
+    }
+
+    .login-logo span {
+        font-size: 22px;
+    }
 }
