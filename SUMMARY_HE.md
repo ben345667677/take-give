@@ -106,7 +106,7 @@ git push
   3. מציג תוצאות
 
 ### `deploy.yml` - פריסה
-- **טריגר:** merge ל-main
+- **טריגר:** push ל-main **או** merge של PR ל-main
 - **זמן:** ~5-7 דקות
 - **עושה:**
   1. בונה Docker images
@@ -166,8 +166,11 @@ git push
 
 # GitHub Actions מריץ בדיקות ✅
 
-# Pull Request → Merge
-# Deployment אוטומטי ל-AWS! 🚀
+# אם push ל-main ישירות:
+# → Deployment אוטומטי מיד! 🚀
+
+# או Pull Request → Merge
+# → Deployment אוטומטי! 🚀
 ```
 
 ---

@@ -171,7 +171,13 @@ git push
 2. הבדיקות ירוצו (tests.yml)
 3. אם הכל עבר - תראה ✅
 
-### כשתעשה Pull Request ל-main ותעשה Merge:
+### כשתעשה push ישיר ל-main:
+1. GitHub Actions יריץ deployment (deploy.yml) **מיד!**
+2. יבנה Docker images
+3. יעלה ל-Docker Hub
+4. יעשה SSH ל-EC2 ויפרס!
+
+### או כשתעשה Pull Request ל-main ותעשה Merge:
 1. GitHub Actions יריץ deployment (deploy.yml)
 2. יבנה Docker images
 3. יעלה ל-Docker Hub
@@ -190,7 +196,7 @@ git push
 - **זמן:** ~2-3 דקות
 
 ### 2. Deploy (`.github/workflows/deploy.yml`)
-- **רץ:** כש-PR נמזג ל-main
+- **רץ:** push ישיר ל-main **או** merge של PR ל-main
 - **עושה:**
   1. בונה Frontend + Backend images
   2. מעלה ל-Docker Hub
@@ -199,6 +205,8 @@ git push
   5. Restart containers
   6. בדיקת health
 - **זמן:** ~5-7 דקות
+
+**💡 טיפ:** אם אתה עובד לבד על main, פשוט תעשה `git push` ו-deployment יקרה אוטומטית!
 
 ---
 
