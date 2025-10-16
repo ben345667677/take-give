@@ -68,9 +68,10 @@ jobs:
 
             echo "🚀 Starting deployment on EC2..."
 
-            # Create and navigate to app directory
+            # Create and navigate to app directory with proper permissions
             echo "📁 Setting up deployment directory..."
-            mkdir -p /opt/trade-give
+            sudo mkdir -p /opt/trade-give
+            sudo chown $USER:$USER /opt/trade-give
             cd /opt/trade-give
 
             # Create docker-compose.yml if it doesn't exist
