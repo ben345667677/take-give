@@ -1,26 +1,23 @@
 name: Deploy to AWS (SSH)
 
 # This workflow deploys to AWS EC2 using SSH
-# Triggers on: push to main OR PR merge to main
+# Triggers ONLY after tests pass on main branch
+# IMPORTANT: Deployment runs ONLY if tests succeed!
 
 on:
-  push:
-    branches:
-      - main  # Deploy on direct push to main
-  pull_request:
+  workflow_run:
+    workflows: ["Run Tests"]
+    types:
+      - completed
     branches:
       - main
-    types:
-      - closed  # Deploy when PR is merged
 
 jobs:
   deploy:
     name: Build and Deploy to AWS via SSH
     runs-on: ubuntu-latest
-    # Run if: direct push to main OR PR was merged to main
-    if: |
-      github.event_name == 'push' ||
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    # Only deploy if tests passed successfully
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout code
@@ -44,7 +41,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/trade-give-frontend:latest
             ${{ secrets.DOCKER_USERNAME }}/trade-give-frontend:${{ github.sha }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/trade-give-frontend:latest
           cache-to: type=inline
 
       - name: Build and push Backend image
@@ -56,7 +52,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/trade-give-backend:latest
             ${{ secrets.DOCKER_USERNAME }}/trade-give-backend:${{ github.sha }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/trade-give-backend:latest
           cache-to: type=inline
 
       - name: Setup SSH
@@ -133,8 +128,31 @@ jobs:
             echo "⚠️  External health check failed, but deployment may still be successful if firewall blocks external access"
           fi
 
-      - name: Comment on PR
-        if: always() && github.event_name == 'pull_request'
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "🚀 Deployment Summary"
+          echo "===================="
+          echo "Triggered by: ${{ github.event.workflow_run.event }}"
+          echo "Status: ${{ job.status }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch: main"
+          echo "Tests Result: ${{ github.event.workflow_run.conclusion }}"
+          echo ""
+          echo "Docker Images:"
+          echo "  - Frontend: ${{ secrets.DOCKER_USERNAME }}/trade-give-frontend:${{ github.sha }}"
+          echo "  - Backend: ${{ secrets.DOCKER_USERNAME }}/trade-give-backend:${{ github.sha }}"
+          if [ "${{ job.status }}" == "success" ]; then
+            echo ""
+            echo "✅ Deployment succeeded!"
+            echo "🌐 Application URL: http://${{ secrets.EC2_HOST }}"
+          else
+            echo ""
+            echo "❌ Deployment failed!"
+          fi
+
+      - name: Comment on PR (if from PR)
+        if: always() && github.event.workflow_run.event == 'pull_request'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -159,26 +177,6 @@ jobs:
               repo: context.repo.repo,
               body: body
             });
-
-      - name: Deployment Summary
-        if: always() && github.event_name == 'push'
-        run: |
-          echo "🚀 Deployment Summary"
-          echo "===================="
-          echo "Status: ${{ job.status }}"
-          echo "Commit: ${{ github.sha }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Images:"
-          echo "  - Frontend: ${{ secrets.DOCKER_USERNAME }}/trade-give-frontend:${{ github.sha }}"
-          echo "  - Backend: ${{ secrets.DOCKER_USERNAME }}/trade-give-backend:${{ github.sha }}"
-          if [ "${{ job.status }}" == "success" ]; then
-            echo ""
-            echo "✅ Deployment succeeded!"
-            echo "🌐 Application URL: http://${{ secrets.EC2_HOST }}"
-          else
-            echo ""
-            echo "❌ Deployment failed!"
-          fi
 
       - name: Cleanup
         if: always()
