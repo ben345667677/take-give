@@ -62,12 +62,14 @@ cat ~/.ssh/my-key.pem
 
 ### שלב 2: הכן את ה-EC2
 
+**⚠️ חשוב מאוד:** ה-EC2 **חייב** להיות מוכן עם Docker לפני שה-deployment הראשון רץ!
+
 התחבר ל-EC2:
 ```bash
 ssh -i ~/.ssh/my-key.pem ec2-user@54.123.45.67
 ```
 
-הרץ את הסקריפט הזה (copy-paste):
+הרץ את הסקריפט הזה (copy-paste כל הקוד):
 ```bash
 # עדכון מערכת
 sudo yum update -y
@@ -82,21 +84,34 @@ sudo usermod -aG docker $USER
 sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
-# צור תיקיית פרויקט
-sudo mkdir -p /opt/trade-give
-sudo chown $USER:$USER /opt/trade-give
-cd /opt/trade-give
+# בדוק שהכל עובד
+docker --version
+docker-compose --version
 
 echo "✅ EC2 מוכן!"
 ```
 
-צור קבצים בתיקייה `/opt/trade-give`:
-
-**docker-compose.yml** (העתק מהפרויקט שלך):
+**חובה!** צא מ-SSH ותתחבר מחדש כדי שה-Docker group יכנס לתוקף:
 ```bash
-nano docker-compose.yml
-# העתק את התוכן מ-docker-compose.yml שלך
-# Ctrl+X, Y, Enter
+exit
+ssh -i ~/.ssh/my-key.pem ec2-user@54.123.45.67
+```
+
+בדוק שאתה יכול להריץ Docker בלי sudo:
+```bash
+docker ps
+# אם עובד בלי שגיאת הרשאות - ✅ מעולה!
+```
+
+**אופציונלי:** הסקריפט יוצר את הקבצים אוטומטית בפעם הראשונה, אבל מומלץ ליצור אותם ידנית כדי להגדיר סיסמאות חזקות מראש.
+
+**אם אתה רוצה ליצור ידנית (מומלץ):**
+
+צור את התיקייה:
+```bash
+sudo mkdir -p /opt/trade-give
+sudo chown $USER:$USER /opt/trade-give
+cd /opt/trade-give
 ```
 
 **קובץ .env** (סיסמאות):
@@ -128,19 +143,12 @@ PORT=3000
 
 שמור: `Ctrl+X` → `Y` → `Enter`
 
-בדוק שהכל עובד:
-```bash
-docker-compose up -d
-sleep 30
-curl http://localhost:3000/api/health
-
-# אמור לקבל: {"status":"OK",...}
-```
-
 צא מ-SSH:
 ```bash
 exit
 ```
+
+**אם לא יצרת ידנית:** הסקריפט יצור אוטומטית בפעם הראשונה עם סיסמאות ברירת מחדל. **זכור לשנות אותן אחר כך!**
 
 ---
 
@@ -236,6 +244,36 @@ http://54.123.45.67:3000/api/health  # Backend API
 ---
 
 ## 🐛 פתרון בעיות
+
+### "docker: command not found" בדפלוימנט
+**בעיה:** Docker לא מותקן על ה-EC2
+
+**פתרון:**
+```bash
+# התחבר ל-EC2
+ssh -i ~/.ssh/my-key.pem ec2-user@54.123.45.67
+
+# התקן Docker
+sudo yum update -y
+sudo yum install docker -y
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+
+# התקן docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# צא והתחבר מחדש
+exit
+ssh -i ~/.ssh/my-key.pem ec2-user@54.123.45.67
+
+# בדוק שעובד
+docker --version
+docker-compose --version
+```
+
+**⚠️ חשוב:** הסקריפט יבדוק אוטומטית ויתן הנחיות אם Docker חסר!
 
 ### "Permission denied (publickey)"
 **בעיה:** לא יכול להתחבר ב-SSH
