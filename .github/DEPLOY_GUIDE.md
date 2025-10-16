@@ -17,8 +17,11 @@
 
 1. **EC2 Instance רץ** (Amazon Linux או Ubuntu)
 2. **קובץ PEM** (SSH key) של ה-EC2
-3. **Docker Hub account** (יש לך: `ben1234561423424`)
-4. **GitHub repository** (הפרויקט שלך)
+3. **GitHub repository** (הפרויקט שלך - פרטי או ציבורי)
+
+**לא צריך:**
+- ❌ Docker Hub account - בונים ישירות על ה-EC2!
+- ❌ Docker Hub secrets
 
 ---
 
@@ -28,12 +31,10 @@
 
 לך ל-GitHub → Repository → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 
-הוסף 5 secrets:
+הוסף **רק 3 secrets** (פשוט יותר!):
 
 | Name | Value | איפה למצוא |
 |------|-------|-----------|
-| `DOCKER_USERNAME` | `ben1234561423424` | שם המשתמש שלך ב-Docker Hub |
-| `DOCKER_PASSWORD` | `<טוקן>` | Docker Hub → Settings → Security → New Access Token |
 | `EC2_SSH_KEY` | `<תוכן PEM>` | פתח את קובץ ה-PEM והעתק הכל |
 | `EC2_HOST` | `54.123.45.67` | Public IP של ה-EC2 (AWS Console) |
 | `EC2_USER` | `ec2-user` | `ec2-user` (Amazon Linux) או `ubuntu` (Ubuntu) |
@@ -51,12 +52,6 @@ cat ~/.ssh/my-key.pem
 # ... כל השורות ...
 # -----END RSA PRIVATE KEY-----
 ```
-
-**איך ליצור Docker Hub Token:**
-1. [Docker Hub](https://hub.docker.com) → Settings → Security
-2. **New Access Token**
-3. שם: `github-actions`, הרשאות: **Read, Write, Delete**
-4. **Generate** → **העתק!**
 
 ---
 
@@ -183,10 +178,11 @@ git push origin main
 
 **שלב 2: Deploy (רק אם tests עברו)**
 4. אם הכל עבר ✅ → `deploy.yml` מתחיל אוטומטית!
-5. בונה Docker images
-6. מעלה ל-Docker Hub
-7. SSH ל-EC2 ומפרס
-8. בודק health
+5. SSH ל-EC2
+6. מושך את הקוד מ-GitHub (git pull)
+7. בונה Docker images ישירות על ה-EC2
+8. מריץ את האפליקציה
+9. בודק health
 
 **אם הבדיקות נכשלו ❌:**
 - Deployment **לא ירוץ**
@@ -208,13 +204,13 @@ git push origin main
 - **רץ:** **רק אחרי שהבדיקות עברו בהצלחה** על main
 - **תלות:** `tests.yml` חייב לעבור ✅
 - **עושה:**
-  1. בונה Frontend + Backend images
-  2. מעלה ל-Docker Hub
-  3. SSH ל-EC2
-  4. Pull images חדשים
-  5. Restart containers
-  6. בדיקת health
-- **זמן:** ~5-7 דקות
+  1. SSH ל-EC2
+  2. Git pull (מושך קוד אחרון)
+  3. בונה Docker images **ישירות על ה-EC2**
+  4. Restart containers
+  5. בדיקת health
+- **זמן:** ~3-5 דקות (תלוי בגודל ה-EC2)
+- **יתרון:** לא צריך Docker Hub! 🚀
 
 **💡 טיפ:** הבדיקות הן שומר סף! אם יש באג, deployment לא יקרה. זה מגן עליך! 🛡️
 
@@ -290,12 +286,20 @@ ssh -i ~/.ssh/my-key.pem ubuntu@54.123.45.67
 chmod 600 ~/.ssh/my-key.pem
 ```
 
-### GitHub Actions נכשל ב-"Docker login"
-**בעיה:** `DOCKER_PASSWORD` לא נכון
+### "git: command not found" בדפלוימנט
+**בעיה:** Git לא מותקן על ה-EC2
 
 **פתרון:**
-1. Docker Hub → צור token חדש
-2. GitHub → Secrets → עדכן `DOCKER_PASSWORD`
+```bash
+# התחבר ל-EC2
+ssh -i ~/.ssh/my-key.pem ec2-user@54.123.45.67
+
+# התקן Git
+sudo yum install -y git
+
+# בדוק
+git --version
+```
 
 ### Deployment מסתיים אבל האתר לא עובד
 **בעיה:** Security Group
@@ -374,13 +378,12 @@ gh pr create --base main --title "Add new feature"
 
 לפני deployment ראשון:
 
-- [ ] יצרתי 5 Secrets בגיטהאב
+- [ ] יצרתי 3 Secrets בגיטהאב (EC2_SSH_KEY, EC2_HOST, EC2_USER)
 - [ ] Docker + Docker Compose מותקנים על EC2
-- [ ] `/opt/trade-give` קיים עם `docker-compose.yml` ו-`.env`
+- [ ] Git מותקן על EC2
 - [ ] Security Group פתוח לפורטים 22, 80, 3000
 - [ ] בדקתי SSH connection ידנית
-- [ ] הרצתי `docker-compose up -d` פעם אחת ידנית על EC2
-- [ ] Backend health עובד: `curl http://localhost:3000/api/health`
+- [ ] Repository פרטי? הוסף deploy key ב-GitHub או עשה אותו public
 
 ---
 
@@ -394,7 +397,7 @@ gh pr create --base main --title "Add new feature"
 ---
 
 **נוצר:** 2025-01-16
-**שם משתמש Docker Hub:** ben1234561423424
-**Deployment method:** SSH with PEM key
+**Deployment method:** SSH + Git + Docker Compose Build on EC2
+**יתרון:** לא צריך Docker Hub! 🚀
 
 🎉 **בהצלחה!**
