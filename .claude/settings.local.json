@@ -9,7 +9,8 @@
       "Bash(docker-compose up:*)",
       "Bash(curl:*)",
       "Bash(docker-compose:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []

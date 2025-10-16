@@ -1,0 +1,160 @@
+name: Deploy to AWS (SSH)
+
+# This workflow uses SSH with PEM key instead of AWS SSM
+# Use this if you prefer SSH access to your EC2 instance
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed  # Only run when PR is merged
+
+jobs:
+  deploy:
+    name: Build and Deploy to AWS via SSH
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/trade-give-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/trade-give-frontend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/trade-give-frontend:latest
+          cache-to: type=inline
+
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/trade-give-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/trade-give-backend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/trade-give-backend:latest
+          cache-to: type=inline
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key.pem
+          chmod 600 ~/.ssh/deploy_key.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2 via SSH
+        run: |
+          ssh -i ~/.ssh/deploy_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+            set -e
+
+            echo "🚀 Starting deployment on EC2..."
+
+            # Navigate to app directory
+            cd /opt/trade-give
+
+            # Pull latest images
+            echo "📥 Pulling Docker images..."
+            docker pull ${{ secrets.DOCKER_USERNAME }}/trade-give-frontend:${{ github.sha }}
+            docker pull ${{ secrets.DOCKER_USERNAME }}/trade-give-backend:${{ github.sha }}
+
+            # Stop existing containers
+            echo "⏹️  Stopping existing containers..."
+            docker-compose down || true
+
+            # Update image tags in docker-compose
+            cat > docker-compose.override.yml << 'EOF'
+          version: '3.8'
+
+          services:
+            loginpage:
+              image: ${{ secrets.DOCKER_USERNAME }}/trade-give-frontend:${{ github.sha }}
+
+            backend:
+              image: ${{ secrets.DOCKER_USERNAME }}/trade-give-backend:${{ github.sha }}
+          EOF
+
+            # Start new containers
+            echo "▶️  Starting new containers..."
+            docker-compose up -d
+
+            # Wait for services
+            echo "⏳ Waiting for services to be healthy..."
+            sleep 30
+
+            # Check backend health
+            if curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+              echo "✅ Backend is healthy!"
+            else
+              echo "❌ Backend health check failed!"
+              docker-compose logs backend
+              exit 1
+            fi
+
+            # Cleanup old images
+            echo "🧹 Cleaning up old images..."
+            docker image prune -af --filter "until=72h"
+
+            echo "✅ Deployment completed successfully!"
+          ENDSSH
+
+      - name: Verify deployment
+        run: |
+          echo "🔍 Verifying deployment..."
+
+          # Check if the API is responding
+          if curl -f http://${{ secrets.EC2_HOST }}:3000/api/health > /dev/null 2>&1; then
+            echo "✅ Deployment verified successfully!"
+            echo "🌐 Application is live at: http://${{ secrets.EC2_HOST }}"
+          else
+            echo "⚠️  External health check failed, but deployment may still be successful if firewall blocks external access"
+          fi
+
+      - name: Comment on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const status = '${{ job.status }}' === 'success' ? '✅ Deployment succeeded!' : '❌ Deployment failed!';
+            const body = `## AWS Deployment ${status}
+
+            **Commit:** \`${{ github.sha }}\`
+            **Docker Images:**
+            - Frontend: \`${{ secrets.DOCKER_USERNAME }}/trade-give-frontend:${{ github.sha }}\`
+            - Backend: \`${{ secrets.DOCKER_USERNAME }}/trade-give-backend:${{ github.sha }}\`
+
+            ${status.includes('✅') ? '🌐 **Application URL:** http://${{ secrets.EC2_HOST }}' : ''}
+
+            **Deployment Method:** SSH (PEM key)
+
+            [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key.pem

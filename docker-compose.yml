@@ -48,5 +48,21 @@ services:
       timeout: 5s
       retries: 5
 
+  tests:
+    build: ./tests
+    container_name: api-tests
+    environment:
+      API_BASE_URL: http://backend:3000/api
+      NODE_ENV: test
+    depends_on:
+      backend:
+        condition: service_started
+      db:
+        condition: service_healthy
+    profiles:
+      - test
+    # This service won't start automatically
+    # Run manually with: docker-compose run --rm tests
+
 volumes:
   db_data:
