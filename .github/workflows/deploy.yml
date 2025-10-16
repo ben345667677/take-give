@@ -68,8 +68,87 @@ jobs:
 
             echo "🚀 Starting deployment on EC2..."
 
-            # Navigate to app directory
+            # Create and navigate to app directory
+            echo "📁 Setting up deployment directory..."
+            mkdir -p /opt/trade-give
             cd /opt/trade-give
+
+            # Create docker-compose.yml if it doesn't exist
+            if [ ! -f docker-compose.yml ]; then
+              echo "📝 Creating initial docker-compose.yml..."
+              cat > docker-compose.yml << 'COMPOSE_EOF'
+          version: '3.8'
+
+          services:
+            loginpage:
+              image: nginx:alpine
+              ports:
+                - "80:80"
+              depends_on:
+                - backend
+              restart: unless-stopped
+
+            backend:
+              image: node:18-alpine
+              ports:
+                - "3000:3000"
+              environment:
+                DB_HOST: db
+                DB_PORT: 3306
+                DB_USER: ${DB_USER:-produser}
+                DB_PASSWORD: ${DB_PASSWORD}
+                DB_NAME: ${DB_NAME:-loginapp}
+                JWT_SECRET: ${JWT_SECRET}
+                PORT: 3000
+              depends_on:
+                db:
+                  condition: service_healthy
+              restart: unless-stopped
+
+            db:
+              image: mysql:8.0
+              environment:
+                MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+                MYSQL_DATABASE: ${MYSQL_DATABASE:-loginapp}
+                MYSQL_USER: ${MYSQL_USER:-produser}
+                MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+              ports:
+                - "3306:3306"
+              volumes:
+                - db_data:/var/lib/mysql
+              restart: unless-stopped
+              healthcheck:
+                test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+
+          volumes:
+            db_data:
+          COMPOSE_EOF
+            fi
+
+            # Create .env file if it doesn't exist
+            if [ ! -f .env ]; then
+              echo "⚠️  WARNING: No .env file found!"
+              echo "📝 Creating default .env - CHANGE THESE VALUES!"
+              cat > .env << 'ENV_EOF'
+          # Database
+          DB_USER=produser
+          DB_PASSWORD=CHANGE_ME_SECURE_PASSWORD_123
+          DB_NAME=loginapp
+
+          # MySQL
+          MYSQL_ROOT_PASSWORD=CHANGE_ME_ROOT_PASSWORD_456
+          MYSQL_DATABASE=loginapp
+          MYSQL_USER=produser
+          MYSQL_PASSWORD=CHANGE_ME_SECURE_PASSWORD_123
+
+          # Backend
+          JWT_SECRET=CHANGE_ME_SUPER_SECRET_JWT_KEY_789
+          ENV_EOF
+              echo "⚠️  IMPORTANT: Edit /opt/trade-give/.env and set secure passwords!"
+            fi
 
             # Pull latest images
             echo "📥 Pulling Docker images..."
