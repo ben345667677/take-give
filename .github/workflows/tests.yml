@@ -26,16 +26,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y docker-compose
 
-      - name: Create .env file for backend
+      - name: Create .env file for testing
         run: |
-          cat > backend/.env << EOF
+          cat > .env << EOF
+          # Database
           DB_HOST=db
           DB_PORT=3306
           DB_USER=appuser
           DB_PASSWORD=apppassword
           DB_NAME=loginapp
+
+          # MySQL
+          MYSQL_ROOT_PASSWORD=rootpassword
+          MYSQL_DATABASE=loginapp
+          MYSQL_USER=appuser
+          MYSQL_PASSWORD=apppassword
+
+          # Backend
           JWT_SECRET=test-secret-key-for-ci
           PORT=3000
+          NODE_ENV=test
           EOF
 
       - name: Start services (Database and Backend)
