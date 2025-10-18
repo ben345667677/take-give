@@ -15,7 +15,9 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nFix deployment issues: API URLs and nginx CORS configuration\n\n- Changed frontend API URLs from localhost to relative URLs (/api) to work with nginx proxy\n- Updated loginPage/app.js to use relative API URL\n- Updated menuPage/app.js to use relative API URL  \n- Improved nginx CORS configuration to properly handle preflight OPTIONS requests\n- Fixed \"Failed to fetch\" error when registering/logging in on production\n\nThis resolves the issue where the frontend was trying to connect to localhost:3000 \ninstead of going through the nginx proxy on the deployed EC2 instance.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
       "Bash(git commit:*)",
-      "Bash(gh run list:*)"
+      "Bash(gh run list:*)",
+      "Bash(yamllint:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
