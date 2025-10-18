@@ -143,27 +143,22 @@ jobs:
             # Create .env file if it doesn't exist
             if [ ! -f .env ]; then
               echo "⚠️  WARNING: No .env file found!"
-              echo "📝 Creating default .env - CHANGE THESE VALUES!"
+              echo "📝 Creating production .env file..."
               cat > .env << 'ENV_EOF'
-          # Database
-          DB_HOST=db
-          DB_PORT=3306
-          DB_USER=produser
-          DB_PASSWORD=CHANGE_ME_SECURE_PASSWORD_123
-          DB_NAME=loginapp
-
-          # MySQL
-          MYSQL_ROOT_PASSWORD=CHANGE_ME_ROOT_PASSWORD_456
-          MYSQL_DATABASE=loginapp
-          MYSQL_USER=produser
-          MYSQL_PASSWORD=CHANGE_ME_SECURE_PASSWORD_123
-
-          # Backend
-          JWT_SECRET=CHANGE_ME_SUPER_SECRET_JWT_KEY_789
-          PORT=3000
-          NODE_ENV=production
-          ENV_EOF
-              echo "⚠️  IMPORTANT: Edit /opt/trade-give/.env and set secure passwords!"
+DB_HOST=db
+DB_PORT=3306
+DB_USER=appuser
+DB_PASSWORD=SecurePass2025!
+DB_NAME=loginapp
+MYSQL_ROOT_PASSWORD=RootPass2025!
+MYSQL_DATABASE=loginapp
+MYSQL_USER=appuser
+MYSQL_PASSWORD=SecurePass2025!
+JWT_SECRET=SuperSecretJWT2025ChangeMe!
+PORT=3000
+NODE_ENV=production
+ENV_EOF
+              echo "✅ .env file created successfully"
             fi
 
             # Stop existing containers
