@@ -1,5 +1,6 @@
 // API Base URL
-const API_URL = 'http://localhost:3000/api';
+// Use relative URL to work with nginx proxy
+const API_URL = '/api';
 
 // Global state
 let categories = [];

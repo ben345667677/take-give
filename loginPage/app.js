@@ -1,5 +1,6 @@
 // API Configuration
-const API_BASE_URL = 'http://localhost:3000/api'; // שנה את זה לכתובת ה-Backend שלך
+// Use relative URL to work with nginx proxy
+const API_BASE_URL = '/api';
 
 // API Endpoints
 const API_ENDPOINTS = {
