@@ -129,6 +129,13 @@ jobs:
               git fetch origin
               git reset --hard origin/main
             else
+              echo "📥 Setting up repository..."
+              # Remove any existing files if directory is not empty
+              if [ "$(ls -A .)" ]; then
+                echo "⚠️  Directory not empty, cleaning up..."
+                rm -rf ./*
+                rm -rf ./.[!.]*
+              fi
               echo "📥 Cloning repository..."
               git clone https://github.com/${{ github.repository }}.git .
             fi
