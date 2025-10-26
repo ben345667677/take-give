@@ -6,13 +6,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --production
+RUN npm install
 
-# Copy source code
+# Copy application files
 COPY . .
 
 # Expose port
 EXPOSE 3000
 
-# Start server
+# Start the application
 CMD ["npm", "start"]
